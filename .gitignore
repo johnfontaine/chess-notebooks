@@ -1,0 +1,7 @@
+# MacOS Files
+.DS_Store
+
+# Python Files
+.venv
+__pycache__/
+

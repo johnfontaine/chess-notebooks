@@ -1,0 +1,23 @@
+{
+  "name": "chess-notebooks",
+  "version": "1.0.0",
+  "description": "A collection of Jupyter notebooks and Python scripts for analyzing chess games, with a focus on player fairness evaluation using metrics like centipawn loss, Lichess accuracy, and Ken Regan's method.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com-personal-class:johnfontaine/chess-notebooks"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cm-chessboard": "^8.11.5"
+  }
+}

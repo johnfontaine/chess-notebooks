@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report.title }}</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fff;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--primary-color);
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .meta {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: var(--light-bg);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .risk-low { color: var(--success-color); }
+        .risk-moderate { color: var(--warning-color); }
+        .risk-high { color: var(--danger-color); }
+        .risk-very-high { color: var(--danger-color); font-weight: bold; }
+
+        section {
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--light-bg);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--light-bg);
+        }
+
+        .flag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .flag-suspicious {
+            background: #ffeaea;
+            color: var(--danger-color);
+        }
+
+        .flag-normal {
+            background: #eafff0;
+            color: var(--success-color);
+        }
+
+        .phase-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-complete {
+            color: var(--success-color);
+        }
+
+        .status-failed {
+            color: var(--danger-color);
+        }
+
+        .risk-factors {
+            background: #fff5f5;
+            border: 1px solid #ffcccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .risk-factors h3 {
+            color: var(--danger-color);
+            margin-bottom: 15px;
+        }
+
+        .risk-factors ul {
+            list-style: none;
+        }
+
+        .risk-factors li {
+            padding: 8px 0;
+            border-bottom: 1px solid #ffeeee;
+        }
+
+        .risk-factors li:last-child {
+            border-bottom: none;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                padding: 20px;
+            }
+
+            .metric-value {
+                font-size: 2em;
+            }
+        }
+
+        /* Player status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .status-badge.status-premium,
+        .status-badge.status-basic,
+        .status-badge.status-staff {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.status-closed-fair-play-violations {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .status-badge.status-closed {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .status-badge.status-unknown {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        /* Phase metric cards */
+        .phase-section {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: white;
+        }
+
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .phase-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--primary-color);
+        }
+
+        .phase-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .phase-metric-card {
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px 16px;
+            min-width: 130px;
+            text-align: center;
+        }
+
+        .phase-metric-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .phase-metric-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* Phase details section */
+        .phase-detail {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--light-bg);
+            border-radius: 8px;
+        }
+
+        .phase-detail h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .key-position-group {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .key-position {
+            margin: 15px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .position-board {
+            flex-shrink: 0;
+        }
+
+        .position-board svg {
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .position-info {
+            font-size: 0.95em;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .position-info h5 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+        }
+
+        .position-info p {
+            margin: 8px 0;
+        }
+
+        .position-info a {
+            color: #0066cc;
+        }
+
+        .move-played {
+            color: #15781B;
+            font-weight: bold;
+        }
+
+        .move-best {
+            color: #003088;
+            font-weight: bold;
+        }
+
+        .arrow-legend {
+            margin-top: 12px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .arrow-legend span {
+            margin-right: 15px;
+        }
+
+        .legend-played::before {
+            content: "→";
+            color: #15781B;
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        .legend-best::before {
+            content: "→";
+            color: #003088;
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        /* Error classification badges */
+        .error-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .error-blunder {
+            background: #ffebee;
+            color: #c43432;
+            border: 1px solid #c43432;
+        }
+
+        .error-mistake {
+            background: #fff3e0;
+            color: #e67700;
+            border: 1px solid #e67700;
+        }
+
+        .error-inaccuracy {
+            background: #fffde7;
+            color: #f5a623;
+            border: 1px solid #f5a623;
+        }
+
+        .error-discounted {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+        }
+
+        .error-partial-discount {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #1565c0;
+        }
+
+        .position-context {
+            background: #f8f9fa;
+            border-left: 3px solid var(--primary-color);
+            padding: 8px 12px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #555;
+            font-style: italic;
+        }
+
+        /* Consolidated Games Section */
+        .consolidated-game {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .game-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .flag-count {
+            font-size: 0.8em;
+            background: var(--light-bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+
+        .flag-sources {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .flag-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .flag-engine { background: #e3f2fd; color: #1565c0; }
+        .flag-regan { background: #fce4ec; color: #c62828; }
+        .flag-maia2 { background: #f3e5f5; color: #7b1fa2; }
+
+        .regan-summary {
+            background: #fff8e1;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .source-badge {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .source-engine { background: #e3f2fd; color: #1565c0; }
+        .source-maia2 { background: #f3e5f5; color: #7b1fa2; }
+
+        .flagged-by {
+            margin: 10px 0 15px 0;
+            padding: 8px 0;
+        }
+
+        .flagged-by strong {
+            margin-right: 10px;
+            color: #666;
+        }
+
+        .stats-table {
+            width: 100%;
+            font-size: 0.9em;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .stats-table td {
+            padding: 4px 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stats-table td:first-child {
+            width: 130px;
+            color: #666;
+        }
+
+        .badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .badge-warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .error-strong-move {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .section-description {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .game-positions {
+            margin-top: 15px;
+        }
+
+        /* Metrics sections for position display */
+        .metrics-section {
+            margin-bottom: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .metrics-section-title {
+            background: #f0f4f8;
+            color: var(--primary-color);
+            margin: 0;
+            padding: 6px 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .metrics-section .stats-table {
+            margin: 0;
+        }
+
+        .metrics-section .stats-table td {
+            padding: 4px 10px;
+        }
+
+        /* Glossary */
+        .glossary {
+            margin: 0;
+            padding: 0;
+        }
+
+        .glossary dt {
+            font-weight: bold;
+            margin-top: 20px;
+            color: var(--primary-color);
+            font-size: 1.05em;
+        }
+
+        .glossary dd {
+            margin-left: 20px;
+            margin-bottom: 10px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* Citations */
+        .citations h3 {
+            color: var(--primary-color);
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+
+        .citations ul {
+            list-style-type: disc;
+            padding-left: 25px;
+            margin: 0;
+        }
+
+        .citations li {
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .citations a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .citations a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Fairness Analysis: <a href="https://www.chess.com/member/{{ report.username }}" target="_blank" style="color: white; text-decoration: underline;">{{ report.username }}</a></h1>
+        <div class="meta">
+            <p><strong>Generated:</strong> {{ report.generated_at }}</p>
+            <p><strong>Player Status:</strong> <span class="status-badge status-{{ report.player_status | default('unknown') | lower | replace(':', '-') | replace('_', '-') }}">{{ report.player_status | default('unknown') }}</span></p>
+            <p><strong>Report Options:</strong> <code style="background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 3px;">{{ report.report_options | default('Default') }}</code></p>
+        </div>
+    </header>
+
+    <section class="summary">
+        <div class="summary-grid">
+            <div class="metric-card">
+                <div class="metric-value">{{ summary.total_games | default('N/A') }}</div>
+                <div class="metric-label">Games Analyzed</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-value">{% if summary.accuracy %}{% if summary.accuracy > 1 %}{{ "%.1f%%" | format(summary.accuracy) }}{% else %}{{ "%.1f%%" | format(summary.accuracy * 100) }}{% endif %}{% else %}N/A{% endif %}</div>
+                <div class="metric-label">Accuracy</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-value">{{ "%.1f" | format(summary.acpl) if summary.acpl else 'N/A' }}</div>
+                <div class="metric-label">ACPL</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-value">{{ "%.2f" | format(summary.z_score) if summary.z_score else 'N/A' }}</div>
+                <div class="metric-label">Avg Z-Score</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-value">{% if summary.humanness %}{{ "%.1f%%" | format(summary.humanness) }}{% else %}N/A{% endif %}</div>
+                <div class="metric-label">Humanness</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-value risk-{{ summary.risk_level | default('unknown') | lower | replace(' ', '-') }}">
+                    {{ summary.risk_level | default('N/A') }}
+                </div>
+                <div class="metric-label">Risk Level</div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Phase Results</h2>
+
+        {% if report.phases.data_collection %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Data Collection</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ report.phases.data_collection.total_games | default('N/A') }}</div>
+                    <div class="phase-metric-label">Total Games</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ report.date_range | default('N/A') }}</div>
+                    <div class="phase-metric-label">Time Period</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.quick_analysis %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Quick Analysis</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                {% set qa = report.phases.quick_analysis %}
+                {% set elo = qa.elo_analysis | default({}) %}
+                {% set elo_by_tc = qa.elo_by_time_class | default({}) %}
+
+                {# Show per-time-class ratings if available #}
+                {% if elo_by_tc.blitz %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo_by_tc.blitz.elo_end | default('N/A') }}</div>
+                    <div class="phase-metric-label">Blitz Rating</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo_by_tc.blitz.elo_min | default('?') }} - {{ elo_by_tc.blitz.elo_max | default('?') }}</div>
+                    <div class="phase-metric-label">Blitz Range</div>
+                </div>
+                {% endif %}
+                {% if elo_by_tc.rapid %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo_by_tc.rapid.elo_end | default('N/A') }}</div>
+                    <div class="phase-metric-label">Rapid Rating</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo_by_tc.rapid.elo_min | default('?') }} - {{ elo_by_tc.rapid.elo_max | default('?') }}</div>
+                    <div class="phase-metric-label">Rapid Range</div>
+                </div>
+                {% endif %}
+                {% if elo_by_tc.bullet %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo_by_tc.bullet.elo_end | default('N/A') }}</div>
+                    <div class="phase-metric-label">Bullet Rating</div>
+                </div>
+                {% endif %}
+
+                {# Fallback to overall if no per-time-class data #}
+                {% if not elo_by_tc.blitz and not elo_by_tc.rapid %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo.elo_end | default('N/A') }}</div>
+                    <div class="phase-metric-label">Current Rating</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo.elo_min | default('?') }} - {{ elo.elo_max | default('?') }}</div>
+                    <div class="phase-metric-label">Elo Range</div>
+                </div>
+                {% endif %}
+
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo.wins | default(0) }}</div>
+                    <div class="phase-metric-label">Wins</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo.losses | default(0) }}</div>
+                    <div class="phase-metric-label">Losses</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ elo.draws | default(0) }}</div>
+                    <div class="phase-metric-label">Draws</div>
+                </div>
+                {% if qa.manipulation_score is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.2f" | format(qa.manipulation_score) }}</div>
+                    <div class="phase-metric-label">Rating Manipulation Score</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.prioritization %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Prioritization</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ report.phases.prioritization.high_priority_count | default('N/A') }}</div>
+                    <div class="phase-metric-label">Priority Games</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.2f" | format(report.phases.prioritization.min_suspicion_score | default(0)) }}</div>
+                    <div class="phase-metric-label">Min Suspicion Score</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.engine_analysis %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Engine Analysis</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                {% set ea = report.phases.engine_analysis %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ ea.games_analyzed | default('N/A') }}</div>
+                    <div class="phase-metric-label">Games Analyzed</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.1f" | format(ea.avg_acpl | default(0)) }}</div>
+                    <div class="phase-metric-label">Average ACPL</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{% if ea.avg_accuracy %}{% if ea.avg_accuracy > 1 %}{{ "%.1f%%" | format(ea.avg_accuracy) }}{% else %}{{ "%.1f%%" | format(ea.avg_accuracy * 100) }}{% endif %}{% else %}N/A{% endif %}</div>
+                    <div class="phase-metric-label">Average Accuracy</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.1f%%" | format((ea.best_move_rate | default(0)) * 100) }}</div>
+                    <div class="phase-metric-label">Best Move Rate</div>
+                </div>
+                {% if ea.avg_eval_volatility is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.0f" | format(ea.avg_eval_volatility | default(0)) }}cp</div>
+                    <div class="phase-metric-label">Avg Eval Volatility</div>
+                </div>
+                {% endif %}
+                {% if ea.avg_gap_cp is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.0f" | format(ea.avg_gap_cp | default(0)) }}cp</div>
+                    <div class="phase-metric-label">Avg Gap to 2nd Best</div>
+                </div>
+                {% endif %}
+                {% if ea.avg_engine_complexity is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.0f%%" | format((ea.avg_engine_complexity | default(0)) * 100) }}</div>
+                    <div class="phase-metric-label">Avg Engine Complexity</div>
+                </div>
+                {% endif %}
+                {% if ea.high_complexity_moves is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ ea.high_complexity_moves | default(0) }}</div>
+                    <div class="phase-metric-label">High Complexity Moves</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.regan_analysis %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Ken Regan-esque Analysis</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                {% set ra = report.phases.regan_analysis %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ ra.games_analyzed | default('N/A') }}</div>
+                    <div class="phase-metric-label">Games Analyzed</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.2f" | format(ra.avg_z_score | default(0)) }}</div>
+                    <div class="phase-metric-label">Average Z-Score</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.2f" | format(ra.max_z_score | default(0)) }}</div>
+                    <div class="phase-metric-label">Max Z-Score</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ ra.flagged_games | default(0) }}</div>
+                    <div class="phase-metric-label">Flagged Games</div>
+                </div>
+                {% if ra.flagged_moves is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ ra.flagged_moves | default(0) }}</div>
+                    <div class="phase-metric-label">Flagged Moves</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.tablebase %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Tablebase</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                {% set tb = report.phases.tablebase %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ tb.games_analyzed | default(tb.games_with_tablebase | default(tb.total_games | default('N/A'))) }}</div>
+                    <div class="phase-metric-label">Games Analyzed</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.1f%%" | format((tb.overall_accuracy | default(0)) * 100) }}</div>
+                    <div class="phase-metric-label">Tablebase Accuracy</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.time_analysis %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Time Analysis</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                {% set ta = report.phases.time_analysis %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ ta.games_with_time_data | default('N/A') }}</div>
+                    <div class="phase-metric-label">Games Analyzed</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.1fs" | format(ta.avg_move_time | default(0)) }}</div>
+                    <div class="phase-metric-label">Avg Move Time</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.1fs" | format(ta.avg_std_move_time | default(0)) }}</div>
+                    <div class="phase-metric-label">Std Deviation</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ ta.suspicious_games | default(0) }}</div>
+                    <div class="phase-metric-label">Flagged Games</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.maia2 %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Maia2</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                {% set m2 = report.phases.maia2 %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ m2.games_analyzed | default('N/A') }}</div>
+                    <div class="phase-metric-label">Games Analyzed</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.1f%%" | format(m2.avg_humanness | default(0)) }}</div>
+                    <div class="phase-metric-label">Average Humanness</div>
+                </div>
+                {% if m2.flagged_games is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ m2.flagged_games | default(0) }}</div>
+                    <div class="phase-metric-label">Flagged Games</div>
+                </div>
+                {% endif %}
+                {% if m2.flagged_moves is defined %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ m2.flagged_moves | default(0) }}</div>
+                    <div class="phase-metric-label">Flagged Moves</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.phases.risk_assessment %}
+        <div class="phase-section">
+            <div class="phase-header">
+                <span class="phase-name">Risk Assessment</span>
+                <span class="status-complete">✓ Complete</span>
+            </div>
+            <div class="phase-metrics">
+                {% set risk = report.phases.risk_assessment %}
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value">{{ "%.2f" | format(risk.risk_score | default(0)) }}</div>
+                    <div class="phase-metric-label">Risk Score</div>
+                </div>
+                <div class="phase-metric-card">
+                    <div class="phase-metric-value risk-{{ risk.risk_level | default('unknown') | lower | replace(' ', '-') }}">{{ risk.risk_level | default('N/A') }}</div>
+                    <div class="phase-metric-label">Risk Level</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+    {% if report.phases.risk_assessment and report.phases.risk_assessment.risk_factors %}
+    <section>
+        <h2>Risk Factors</h2>
+        <div class="risk-factors">
+            <h3>Identified Risk Factors</h3>
+            <ul>
+                {% for rf in report.phases.risk_assessment.risk_factors %}
+                <li>
+                    <strong>{{ rf.metric }}</strong>: z-score = {{ "%.2f" | format(rf.z_score) }}
+                    (weight: {{ rf.weight }})
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+    {% else %}
+    <section>
+        <h2>Risk Factors</h2>
+        <p style="color: var(--success-color);">No significant risk factors identified.</p>
+    </section>
+    {% endif %}
+
+    <section>
+        <h2>Phase Details</h2>
+
+        {% if report.phases.engine_analysis %}
+        <div class="phase-detail">
+            <h3>Engine Analysis</h3>
+            <table>
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>Assessment</th>
+            </tr>
+            <tr>
+                <td>Average ACPL</td>
+                <td>{{ "%.1f" | format(report.phases.engine_analysis.avg_acpl) }}</td>
+                <td>
+                    {% if report.phases.engine_analysis.avg_acpl < 30 %}
+                        <span class="flag flag-normal">Excellent</span>
+                    {% elif report.phases.engine_analysis.avg_acpl < 50 %}
+                        <span class="flag flag-normal">Good</span>
+                    {% elif report.phases.engine_analysis.avg_acpl < 80 %}
+                        <span class="flag flag-normal">Average</span>
+                    {% else %}
+                        <span class="flag flag-normal">Below Average</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Accuracy</td>
+                <td>{% if report.phases.engine_analysis.avg_accuracy > 1 %}{{ "%.1f%%" | format(report.phases.engine_analysis.avg_accuracy) }}{% else %}{{ "%.1f%%" | format(report.phases.engine_analysis.avg_accuracy * 100) }}{% endif %}</td>
+                <td>
+                    {% set acc = report.phases.engine_analysis.avg_accuracy %}
+                    {% set acc_pct = acc if acc > 1 else acc * 100 %}
+                    {% if acc_pct > 90 %}
+                        <span class="flag flag-suspicious">Unusually High</span>
+                    {% elif acc_pct > 80 %}
+                        <span class="flag flag-normal">Excellent</span>
+                    {% elif acc_pct > 70 %}
+                        <span class="flag flag-normal">Good</span>
+                    {% else %}
+                        <span class="flag flag-normal">Average</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Best Move Rate</td>
+                <td>{{ "%.1f%%" | format(report.phases.engine_analysis.best_move_rate * 100) }}</td>
+                <td>
+                    {% if report.phases.engine_analysis.best_move_rate > 0.60 %}
+                        <span class="flag flag-suspicious">Unusually High</span>
+                    {% elif report.phases.engine_analysis.best_move_rate > 0.45 %}
+                        <span class="flag flag-normal">Good</span>
+                    {% else %}
+                        <span class="flag flag-normal">Normal</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if report.phases.engine_analysis.avg_eval_volatility is defined %}
+            <tr>
+                <td>Avg Evaluation Volatility</td>
+                <td>{{ "%.0f" | format(report.phases.engine_analysis.avg_eval_volatility) }}cp</td>
+                <td>
+                    {% if report.phases.engine_analysis.avg_eval_volatility > 100 %}
+                        <span class="flag flag-suspicious">Unstable Positions</span>
+                    {% elif report.phases.engine_analysis.avg_eval_volatility > 50 %}
+                        <span class="flag flag-normal">Moderate</span>
+                    {% else %}
+                        <span class="flag flag-normal">Stable</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            {% if report.phases.engine_analysis.avg_gap_cp is defined %}
+            <tr>
+                <td>Avg Gap to 2nd Best</td>
+                <td>{{ "%.0f" | format(report.phases.engine_analysis.avg_gap_cp) }}cp</td>
+                <td>
+                    {% if report.phases.engine_analysis.avg_gap_cp < 75 %}
+                        <span class="flag flag-normal">Multiple Options</span>
+                    {% elif report.phases.engine_analysis.avg_gap_cp < 150 %}
+                        <span class="flag flag-normal">Clear Choices</span>
+                    {% else %}
+                        <span class="flag flag-normal">Obvious Moves</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            {% if report.phases.engine_analysis.avg_engine_complexity is defined %}
+            <tr>
+                <td>Avg Engine Complexity</td>
+                <td>{{ "%.0f%%" | format(report.phases.engine_analysis.avg_engine_complexity * 100) }}</td>
+                <td>
+                    {% if report.phases.engine_analysis.avg_engine_complexity > 0.5 %}
+                        <span class="flag flag-normal">Complex Positions</span>
+                    {% elif report.phases.engine_analysis.avg_engine_complexity > 0.25 %}
+                        <span class="flag flag-normal">Moderate</span>
+                    {% else %}
+                        <span class="flag flag-normal">Simple Positions</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+            {% if report.phases.engine_analysis.high_complexity_moves is defined %}
+            <tr>
+                <td>High Complexity Moves</td>
+                <td>{{ report.phases.engine_analysis.high_complexity_moves }}</td>
+                <td>-</td>
+            </tr>
+            {% endif %}
+        </table>
+        </div>
+        {% endif %}
+
+        {% if report.phases.regan_analysis %}
+        <div class="phase-detail">
+            <h3>Ken Regan-esque Analysis</h3>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Assessment</th>
+                </tr>
+                <tr>
+                    <td>Games Analyzed</td>
+                    <td>{{ report.phases.regan_analysis.games_analyzed }}</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Average Z-Score</td>
+                    <td>{{ "%.2f" | format(report.phases.regan_analysis.avg_z_score) }}</td>
+                    <td>{% if report.phases.regan_analysis.avg_z_score > 2 %}<span class="flag flag-suspicious">Above Threshold</span>{% else %}<span class="flag flag-normal">Normal</span>{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Maximum Z-Score</td>
+                    <td>{{ "%.2f" | format(report.phases.regan_analysis.max_z_score) }}</td>
+                    <td>{% if report.phases.regan_analysis.max_z_score > 3 %}<span class="flag flag-suspicious">High</span>{% else %}<span class="flag flag-normal">Normal</span>{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Flagged Games</td>
+                    <td>{{ report.phases.regan_analysis.flagged_games }}</td>
+                    <td>{% if report.phases.regan_analysis.flagged_games > 0 %}<span class="flag flag-suspicious">Requires Review</span>{% else %}<span class="flag flag-normal">None</span>{% endif %}</td>
+                </tr>
+                {% if report.phases.regan_analysis.flagged_moves is defined %}
+                <tr>
+                    <td>Flagged Moves</td>
+                    <td>{{ report.phases.regan_analysis.flagged_moves }}</td>
+                    <td>-</td>
+                </tr>
+                {% endif %}
+            </table>
+
+        </div>
+        {% endif %}
+
+        {% if report.phases.tablebase %}
+        <div class="phase-detail">
+            <h3>Tablebase Analysis</h3>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Assessment</th>
+                </tr>
+                <tr>
+                    <td>Games with Tablebase Positions</td>
+                    <td>{{ report.phases.tablebase.games_analyzed | default(report.phases.tablebase.games_with_tablebase | default(report.phases.tablebase.total_games | default('N/A'))) }}</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Tablebase Accuracy</td>
+                    <td>{{ "%.1f%%" | format((report.phases.tablebase.overall_accuracy | default(0)) * 100) }}</td>
+                    <td>{% if report.phases.tablebase.overall_accuracy and report.phases.tablebase.overall_accuracy < 0.70 %}<span class="flag flag-suspicious">Below Expected</span>{% else %}<span class="flag flag-normal">Normal</span>{% endif %}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if report.phases.time_analysis %}
+        <div class="phase-detail">
+            <h3>Time Analysis</h3>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Assessment</th>
+                </tr>
+                <tr>
+                    <td>Games Analyzed</td>
+                    <td>{{ report.phases.time_analysis.games_with_time_data | default('N/A') }}</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Average Move Time</td>
+                    <td>{{ "%.1fs" | format(report.phases.time_analysis.avg_move_time | default(0)) }}</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Standard Deviation</td>
+                    <td>{{ "%.1fs" | format(report.phases.time_analysis.avg_std_move_time | default(0)) }}</td>
+                    <td>{% if report.phases.time_analysis.avg_std_move_time and report.phases.time_analysis.avg_std_move_time < 1.0 %}<span class="flag flag-suspicious">Very Consistent</span>{% else %}<span class="flag flag-normal">Normal</span>{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Suspicious Games (Bot-like Timing)</td>
+                    <td>{{ report.phases.time_analysis.suspicious_games | default(0) }}</td>
+                    <td>{% if report.phases.time_analysis.suspicious_games and report.phases.time_analysis.suspicious_games > 0 %}<span class="flag flag-suspicious">Requires Review</span>{% else %}<span class="flag flag-normal">None</span>{% endif %}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if report.phases.maia2 %}
+        <div class="phase-detail">
+            <h3>Maia2 Humanness Analysis</h3>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Assessment</th>
+                </tr>
+                <tr>
+                    <td>Games Analyzed</td>
+                    <td>{{ report.phases.maia2.games_analyzed | default('N/A') }}</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Average Humanness</td>
+                    <td>{{ "%.1f%%" | format(report.phases.maia2.avg_humanness | default(0)) }}</td>
+                    <td>{% if report.phases.maia2.avg_humanness and report.phases.maia2.avg_humanness < 30 %}<span class="flag flag-suspicious">Low Humanness</span>{% elif report.phases.maia2.avg_humanness and report.phases.maia2.avg_humanness > 80 %}<span class="flag flag-normal">Very Human-like</span>{% else %}<span class="flag flag-normal">Normal</span>{% endif %}</td>
+                </tr>
+                {% if report.phases.maia2.flagged_games is defined %}
+                <tr>
+                    <td>Flagged Games</td>
+                    <td>{{ report.phases.maia2.flagged_games | default(0) }}</td>
+                    <td>{% if report.phases.maia2.flagged_games and report.phases.maia2.flagged_games > 0 %}<span class="flag flag-suspicious">Requires Review</span>{% else %}<span class="flag flag-normal">None</span>{% endif %}</td>
+                </tr>
+                {% endif %}
+                {% if report.phases.maia2.flagged_moves is defined %}
+                <tr>
+                    <td>Flagged Moves</td>
+                    <td>{{ report.phases.maia2.flagged_moves | default(0) }}</td>
+                    <td>-</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+        {% endif %}
+    </section>
+
+    {% if report.consolidated_games %}
+    <section>
+        <h2>Key Games and Positions</h2>
+        <p class="section-description">Consolidated view of games and positions flagged by multiple analyses. Games sorted by date (most recent first).</p>
+
+        <div class="arrow-legend">
+            <span class="legend-played">Green: Move Played</span>
+            <span class="legend-best">Blue: Best Move</span>
+        </div>
+
+        {% for game_id, game_data in report.consolidated_games.items() %}
+        <div class="consolidated-game">
+            <div class="game-header">
+                <h3>
+                    <a href="https://www.chess.com/game/live/{{ game_id }}?username={{ report.username }}" target="_blank">
+                        {{ game_data.player_color | default('White') | capitalize }} {{ game_data.player_elo | default('?') }} vs {{ game_data.opponent_elo | default('?') }}
+                        {% if game_data.player_result == 'win' %}1-0{% elif game_data.player_result == 'loss' %}0-1{% elif game_data.player_result == 'draw' %}½-½{% else %}{{ game_data.result | default('') }}{% endif %}
+                        {{ game_data.termination | default('') }}
+                        {{ game_data.date | default('') }}
+                    </a>
+                </h3>
+            </div>
+            <div class="flagged-by">
+                <strong>Flagged By:</strong>
+                {% if 'engine' in game_data.flags %}<span class="flag-badge flag-engine">Engine Analysis</span>{% endif %}
+                {% if 'regan' in game_data.flags %}<span class="flag-badge flag-regan">Ken Regan-esque</span>{% endif %}
+                {% if 'maia2' in game_data.flags %}<span class="flag-badge flag-maia2">Maia2</span>{% endif %}
+            </div>
+
+            {% if game_data.regan_data %}
+            <div class="regan-summary">
+                <strong>Ken Regan-esque:</strong>
+                Z-Score: {{ "%.2f" | format(game_data.regan_data.z_score) }} |
+                IPR: {{ game_data.regan_data.ipr }} |
+                Elo Diff: +{{ game_data.regan_data.elo_difference }} |
+                <span class="flag flag-suspicious">{{ game_data.regan_data.suspicion_level | capitalize }}</span>
+            </div>
+            {% endif %}
+
+            {% if game_data.positions %}
+            <div class="game-positions">
+                {% for pos in game_data.positions %}
+                <div class="key-position">
+                    {% if pos.svg %}
+                    <div class="position-board">{{ pos.svg | safe }}</div>
+                    {% endif %}
+                    <div class="position-info">
+                        <h5>
+                            {% if pos.source == 'engine' %}Move {{ pos.ply }}{% else %}Surprising Move{% endif %}
+                            <span class="source-badge source-{{ pos.source }}">{{ pos.source | capitalize }}</span>
+                        </h5>
+
+                        {% if pos.source == 'engine' and pos.error_class %}
+                        <span class="error-badge error-{{ pos.error_class | lower | replace(' ', '-') }}">{{ pos.error_class }}</span>
+                        {% elif pos.source == 'maia2' %}
+                        {% if pos.discounted == 'full' %}
+                        <span class="error-badge error-discounted">Discounted</span>
+                        {% elif pos.discounted == 'partial' %}
+                        <span class="error-badge error-partial-discount">Partially Discounted</span>
+                        {% else %}
+                        <span class="error-badge error-inaccuracy">Low Probability</span>
+                        {% endif %}
+                        {% endif %}
+
+                        {% if pos.context %}
+                        <div class="position-context"><strong>Why flagged:</strong> {{ pos.context }}</div>
+                        {% endif %}
+
+                        <p><span class="move-played">Played: {{ pos.move }}</span>
+                        {% if pos.best_move and pos.best_move != pos.move %} <span class="move-best">Best: {{ pos.best_move }}</span>{% endif %}</p>
+
+                        {# === STOCKFISH SECTION === #}
+                        <div class="metrics-section">
+                            <h6 class="metrics-section-title">Stockfish</h6>
+                            <table class="stats-table">
+                                <tr>
+                                    <td><strong>Eval:</strong></td>
+                                    <td>{% if pos.eval_before is defined and pos.eval_before is not none %}{{ "%.2f" | format(pos.eval_before) }} → {{ "%.2f" | format(pos.eval_after | default(pos.eval_before)) }}{% if pos.analysis_depth %} (d{{ pos.analysis_depth }}){% endif %}{% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>CPL:</strong></td>
+                                    <td>{{ "%.0f" | format(pos.cpl | default(0)) }}{% if pos.move_class %} ({{ pos.move_class }}){% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Move Rank:</strong></td>
+                                    <td>{% if pos.move_rank is defined and pos.move_rank is not none %}#{{ pos.move_rank }} of {{ pos.total_legal_moves | default('?') }}{% else %}N/A{% endif %}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        {# === MAIA2 SECTION === #}
+                        <div class="metrics-section">
+                            <h6 class="metrics-section-title">Maia2</h6>
+                            <table class="stats-table">
+                                <tr>
+                                    <td><strong>Humanness:</strong></td>
+                                    <td>{% if pos.probability is defined and pos.probability is not none %}{{ "%.1f%%" | format(pos.probability * 100) }} (Rank #{{ pos.rank | default('?') }}){% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Human Moves:</strong></td>
+                                    <td>{% if pos.num_human_moves is defined and pos.num_human_moves is not none %}{{ pos.num_human_moves }} of {{ pos.maia_total_moves | default(pos.total_legal_moves | default('?')) }} (≥1% prob){% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Expected Move:</strong></td>
+                                    <td>{% if pos.top_move %}{{ pos.top_move }} ({{ "%.1f%%" | format((pos.top_move_probability | default(0)) * 100) }}){% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>CP Adjustment:</strong></td>
+                                    <td>{% if pos.cp_adjustment is defined and pos.cp_adjustment is not none %}{{ "%+.0f" | format(pos.cp_adjustment) }}cp{% else %}N/A{% endif %}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        {# === POSITIONAL ASSESSMENT SECTION === #}
+                        <div class="metrics-section">
+                            <h6 class="metrics-section-title">Positional Assessment</h6>
+                            <table class="stats-table">
+                                <tr>
+                                    <td><strong>Game Phase:</strong></td>
+                                    <td>{{ pos.game_phase | default('N/A') | capitalize }}</td>
+                                </tr>
+                                {% if pos.has_trap or pos.is_tricky %}
+                                <tr>
+                                    <td><strong>Traps:</strong></td>
+                                    <td>{% if pos.has_trap %}<span class="badge badge-warning">Trap Available</span> {% endif %}{% if pos.is_tricky %}<span class="badge badge-warning">Tricky Position</span>{% endif %}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td><strong>Material:</strong></td>
+                                    <td>{% if pos.pure_material is defined %}{{ "%+d" | format(pos.pure_material) }}{% if pos.eval_before is defined and pos.eval_before is not none %} (engine: {{ "%.2f" | format(pos.eval_before) }}){% endif %}{% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Branching Factor:</strong></td>
+                                    <td>{% if pos.raw_branching_factor is defined and pos.raw_branching_factor > 0 %}{{ "%.2f" | format(pos.raw_branching_factor) }}{% elif pos.branching_factor is defined and pos.branching_factor > 0 %}{{ "%.1f" | format(pos.branching_factor) }}{% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fragility:</strong></td>
+                                    <td>{{ "%.2f" | format(pos.fragility | default(0)) }}{% if pos.fragility_trend %} {% if pos.fragility_trend == 'increasing' %}↑{% elif pos.fragility_trend == 'decreasing' %}↓{% else %}→{% endif %}{% endif %}{% if pos.distance_to_peak is defined and pos.distance_to_peak != 0 %} ({{ "%+d" | format(pos.distance_to_peak) }} to peak){% endif %}{% if pos.is_pre_fragility_peak %} <span class="badge badge-warning">Pre-Peak</span>{% endif %}</td>
+                                </tr>
+
+                                {# Stockfish Move Distribution sub-group #}
+                                <tr>
+                                    <td colspan="2" style="padding-top: 8px; padding-bottom: 4px; font-size: 0.85em; color: #888; font-style: italic;">Move Distribution:</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-left: 12px;"><strong>Gap to 2nd:</strong></td>
+                                    <td>{% if pos.gap_cp is defined and pos.gap_cp > 0 %}{{ pos.gap_cp }}cp{% if pos.gap_cp < 50 %} <span class="badge badge-warning">Close</span>{% endif %}{% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-left: 12px;"><strong>Playable Moves:</strong></td>
+                                    <td>{% if pos.num_playable_moves is defined %}{{ pos.num_playable_moves }}{% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-left: 12px;"><strong>Eval Volatility:</strong></td>
+                                    <td>{% if pos.eval_volatility is defined and pos.eval_volatility > 0 %}{{ "%.0f" | format(pos.eval_volatility) }}cp{% if pos.eval_volatility > 100 %} <span class="badge badge-warning">Unstable</span>{% endif %}{% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-left: 12px;"><strong>Node Branching:</strong></td>
+                                    <td>{% if pos.node_branching_factor is defined and pos.node_branching_factor > 0 %}{{ "%.2f" | format(pos.node_branching_factor) }}{% else %}N/A{% endif %}</td>
+                                </tr>
+
+                                <tr>
+                                    <td><strong>Complexity:</strong></td>
+                                    <td>{% if pos.engine_complexity_score is defined and pos.engine_complexity_score > 0 %}{{ "%.0f%%" | format(pos.engine_complexity_score * 100) }} <span class="badge {% if pos.engine_complexity_category == 'VERY_HIGH' %}badge-warning{% elif pos.engine_complexity_category == 'HIGH' %}badge-warning{% endif %}">{{ pos.engine_complexity_category | default('UNKNOWN') }}</span>{% else %}N/A{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Book Status:</strong></td>
+                                    <td>{% if pos.is_book_move %}In Book{% elif pos.distance_from_book is defined and pos.distance_from_book > 0 %}{{ pos.distance_from_book }} plys from book{% else %}N/A{% endif %}</td>
+                                </tr>
+                                {% if pos.tablebase_status %}
+                                <tr>
+                                    <td><strong>Tablebase:</strong></td>
+                                    <td>{{ pos.tablebase_status }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+
+                        <p><a href="https://www.chess.com/game/live/{{ game_id }}?username={{ report.username }}{% if pos.ply %}&move={{ pos.ply }}{% endif %}" target="_blank">View on Chess.com →</a></p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <section>
+        <h2>Glossary</h2>
+        <dl class="glossary">
+            <dt>ACPL (Average Centipawn Loss)</dt>
+            <dd>Average error per move measured in centipawns (1/100th of a pawn). Lower values indicate more accurate play. ACPL varies significantly based on playing strength, time control, and position complexity.</dd>
+
+            <dt>Accuracy</dt>
+            <dd>Percentage score (0-100%) measuring how close a player's moves were to the engine's top choice, using the Lichess win-percentage formula. Higher values indicate more accurate play.</dd>
+
+            <dt>Best Move Rate</dt>
+            <dd>Percentage of moves that exactly matched the engine's top recommendation. Unusually high rates (>60%) across many games may indicate computer assistance.</dd>
+
+            <dt>Engine Complexity Score</dt>
+            <dd>Composite position difficulty score (0-100%) based on engine behavior analysis. Combines four metrics: Evaluation Volatility (30%), Gap to 2nd Best (25%), Convergence Depth (20%), and Branching Factor (25%). Categories: LOW (<25%), MEDIUM (25-50%), HIGH (50-75%), VERY_HIGH (>75%). Higher scores indicate positions where even engines struggle to find the best move quickly.</dd>
+
+            <dt>Evaluation Volatility</dt>
+            <dd>Standard deviation of centipawn evaluation across multiple analysis depths [5, 10, 15, 20]. Higher volatility indicates unstable positions where the best move changes as analysis deepens. Values >150cp indicate very unstable positions; <30cp indicates stable positions.</dd>
+
+            <dt>Gap to 2nd Best (Gap Metric)</dt>
+            <dd>Centipawn difference between the engine's best move and second-best move (using MultiPV analysis). Small gaps (<50cp) indicate positions with multiple viable moves where choosing correctly is harder. Large gaps (>150cp) indicate positions with a clearly superior move.</dd>
+
+            <dt>SF Branching Factor (Stockfish Branching)</dt>
+            <dd>Engine-derived branching factor estimated from Stockfish node counts across search depths. Calculated as (nodes_d2/nodes_d1)^(1/(d2-d1)) averaged across depth pairs. Typical values range from 1.5-4 (average ~2-3). This measures how much the engine's search tree expands at each level.</dd>
+
+            <dt>Raw Branching Factor (Brute-Force Branching)</dt>
+            <dd>True positional branching factor calculated by counting all legal moves at 3-ply depth. This counts the total reachable positions: legal moves from current position, then legal responses to each, then legal replies to those. Returns the geometric mean. Typical values: ~20-25 for opening positions, ~15-20 for middlegame, ~5-10 for simple endgames. Higher values indicate positions with many possible continuations.</dd>
+
+            <dt>Convergence Depth</dt>
+            <dd>First depth at which the engine's best move stabilizes and matches the final recommendation. Later convergence indicates more complex positions where shallow analysis gives wrong answers.</dd>
+
+            <dt>Fragility</dt>
+            <dd>Graph-theoretic measure of position vulnerability, calculated from betweenness centrality of attacked pieces. Higher values indicate positions where important pieces are under attack and small errors can have large consequences. Based on arXiv:2410.02333.</dd>
+
+            <dt>Pre-Peak (Fragility)</dt>
+            <dd>Positions occurring before the game's maximum fragility point. These are often decisive moments where accurate play matters most. Finding best moves consistently in pre-peak positions suggests either strong calculation ability or possible computer assistance.</dd>
+
+            <dt>Humanness</dt>
+            <dd>Score indicating how human-like move choices are, based on Maia2 neural network predictions calibrated to different rating levels. Higher values indicate moves more consistent with typical human patterns at the player's rating. Low probability moves are <strong>discounted</strong> in simple positions: (1) when only 1-2 moves are reasonable (forced/near-forced), or (2) when almost all moves win (trivial position). Low probability is only concerning in complex positions where 3-8 moves are competitive and the player picked an unusual one.</dd>
+
+            <dt>Maia2 CP Adjustment</dt>
+            <dd>The centipawn difference between the played move and Maia2's top predicted move. Calculated as eval(played_move) - eval(top_maia_move). Negative values indicate the player found a move stronger than the most human-like choice. Consistently negative adjustments may indicate non-human move selection.</dd>
+
+            <dt>Num Human Moves</dt>
+            <dd>Count of legal moves that have >=1% probability according to Maia2's prediction model. More human moves indicate positions where typical players would consider multiple options. Positions with only 1-2 human moves are considered forced or near-forced.</dd>
+
+            <dt>Move Accuracy</dt>
+            <dd>Individual move quality score (0-100%) using the Lichess formula based on win percentage preservation. Calculated as: accuracy = 103.1668 * exp(-0.04354 * (win_pct_before - win_pct_after)) - 3.1669, capped between 0 and 100. A move that maintains or improves the position scores near 100%.</dd>
+
+            <dt>Win Percentage</dt>
+            <dd>Expected probability of winning from a given position, calculated from the centipawn evaluation using the Lichess formula: 50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1). An evaluation of 0cp gives 50% win chance, +100cp gives ~59%, +300cp gives ~75%.</dd>
+
+            <dt>Move Rank</dt>
+            <dd>The rank of the played move among all legal moves sorted by engine evaluation. Rank 1 means the best move was played. Higher ranks indicate suboptimal moves. Calculated by analyzing all legal moves at reduced depth for efficiency.</dd>
+
+            <dt>Playable Moves</dt>
+            <dd>Count of legal moves within 50 centipawns of the best move. Positions with many playable moves are more forgiving of imperfect play, while positions with few playable moves require precise calculation.</dd>
+
+            <dt>IPR (Intrinsic Performance Rating)</dt>
+            <dd>A Ken Regan-esque metric estimating a player's effective strength based on move quality, independent of opponent rating. Calculated by comparing actual moves to engine recommendations.</dd>
+
+            <dt>Official Elo</dt>
+            <dd>The player's actual rating at the time each game was played, as recorded by Chess.com. This is used as the baseline for Ken Regan-esque analysis to calculate how much a player's performance (IPR) exceeds their expected level. A large difference between IPR and Official Elo indicates the player performed significantly above their rating.</dd>
+
+            <dt>Z-Score</dt>
+            <dd>A Ken Regan-esque metric measuring how many standard deviations a player's performance is above what would be expected for their rating. Values above 2.0 warrant investigation; values above 3.0 are highly suspicious.</dd>
+
+            <dt>Rating Manipulation Score</dt>
+            <dd>Measure of suspicious rating patterns such as sandbagging (intentional losing to lower rating) or rating collusion. Higher values indicate more suspicious patterns.</dd>
+
+            <dt>Tablebase Accuracy</dt>
+            <dd>Accuracy in endgame positions with 7 or fewer pieces, where perfect play is mathematically known from Syzygy tablebases. This metric measures whether the player found objectively best moves in these positions.</dd>
+
+            <dt>Flagged Games</dt>
+            <dd>Games identified by the analysis as potentially warranting closer review due to statistical anomalies or unusual patterns.</dd>
+
+            <dt>Flagged Moves</dt>
+            <dd>Individual moves identified as unusual - either surprisingly strong for the player's rating level, or exhibiting patterns inconsistent with human play.</dd>
+
+            <dt>Suspicion Score</dt>
+            <dd>A composite score used to prioritize which games to analyze in detail. Based on factors like opponent strength, game result, and rating change.</dd>
+
+            <dt>Risk Assessment</dt>
+            <dd>An overall evaluation of potential fair play concerns based on all analysis phases. Combines Z-scores, accuracy metrics, humanness scores, and timing patterns into a composite risk score. Risk levels are categorized as: LOW (no significant concerns), MODERATE (some anomalies warrant attention), HIGH (multiple concerning patterns detected), or VERY HIGH (strong indicators of potential issues across multiple metrics).</dd>
+        </dl>
+    </section>
+
+    <section>
+        <h2>Citations</h2>
+        <div class="citations">
+            <h3>Third-Party Projects</h3>
+            <ul>
+                <li><a href="https://stockfishchess.org/" target="_blank">Stockfish</a> - Open source chess engine used for position evaluation and move analysis.</li>
+                <li><a href="https://github.com/CSSLab/maia-chess" target="_blank">Maia Chess / Maia2</a> - Human-like neural network chess engine trained on millions of human games, used for humanness scoring.</li>
+                <li><a href="https://python-chess.readthedocs.io/" target="_blank">python-chess</a> - Python chess library for move generation, validation, PGN parsing, and board rendering.</li>
+                <li><a href="https://lichess.org/blog/W3WeMyQAACQAdfAL/7-piece-syzygy-tablebases-are-complete" target="_blank">Syzygy Tablebases</a> (via Lichess API) - 7-piece endgame tablebases for perfect endgame analysis.</li>
+            </ul>
+
+            <h3>Methodologies</h3>
+            <ul>
+                <li><a href="https://cse.buffalo.edu/~regan/chess/fidelity/" target="_blank">Ken Regan's Chess Fidelity Research</a> - Inspiration for IPR and Z-score cheat detection methodology. Note: This implementation is "Ken Regan-esque" and is not his official code or methodology.</li>
+                <li><a href="https://github.com/MGleason1/PGN-Spy" target="_blank">PGN Spy</a> - Reference for centipawn loss calculation methodology.</li>
+                <li><a href="https://lichess.org/page/accuracy" target="_blank">Lichess Accuracy Formula</a> - Win percentage based accuracy formula used in this analysis.</li>
+            </ul>
+        </div>
+    </section>
+
+    <footer>
+        <p>Generated by Fairness Analysis System</p>
+        <p>This report is for informational purposes only and does not constitute an accusation of cheating.</p>
+    </footer>
+</body>
+</html>

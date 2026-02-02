@@ -1,0 +1,3 @@
+[submodule "submodules/chess-openings"]
+	path = submodules/chess-openings
+	url = https://github.com/lichess-org/chess-openings

@@ -5,3 +5,26 @@
 .venv
 __pycache__/
 
+# IDE
+.vscode
+
+# Environment variables (contains personal info)
+.env
+.claude
+references
+package-lock.json
+node_modules/
+
+# Data directories - ignore contents but keep structure via README.md files
+data/**
+!data/
+!data/README.md
+!data/*/
+!data/*/README.md
+
+# Maia2 models - ignore weights but keep structure
+maia2_models/**
+!maia2_models/
+!maia2_models/README.md
+
+rapid_model.pt
